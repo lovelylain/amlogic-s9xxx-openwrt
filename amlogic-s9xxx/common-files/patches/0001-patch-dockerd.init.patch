@@ -1,0 +1,60 @@
+From 3ee9e945e003366e0211085fcf9211eb82de5d29 Mon Sep 17 00:00:00 2001
+From: lovelylain <jobmailcn@gmail.com>
+Date: Mon, 3 Oct 2022 11:11:58 +0800
+Subject: [PATCH] patch dockerd.init
+
+---
+ utils/dockerd/files/dockerd.init | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/utils/dockerd/files/dockerd.init b/utils/dockerd/files/dockerd.init
+index fc3b88a..520ec3a 100755
+--- a/utils/dockerd/files/dockerd.init
++++ b/utils/dockerd/files/dockerd.init
+@@ -40,7 +40,9 @@ find_network_device() {
+ }
+ 
+ boot() {
+-	uciadd
++	config_load dockerd
++	config_get_bool iptables globals iptables "1"
++	[ "${iptables}" -eq "1" ] && uciadd
+ 	rc_procd start_service
+ }
+ 
+@@ -151,6 +153,7 @@ ucidel() {
+ 
+ process_config() {
+ 	local alt_config_file data_root log_level iptables bip
++	local log_driver
+ 
+ 	[ -f /etc/config/dockerd ] || {
+ 		# Use the daemon default configuration
+@@ -175,6 +178,8 @@ process_config() {
+ 
+ 	# Don't add these options by default
+ 	# omission == docker defaults
++	config_get http_proxy globals http_proxy ""
++	config_get log_driver globals log_driver ""
+ 	config_get bip globals bip ""
+ 	config_get registry_mirrors globals registry_mirrors ""
+ 	config_get hosts globals hosts ""
+@@ -189,6 +194,7 @@ process_config() {
+ 	json_add_string "data-root" "${data_root}"
+ 	json_add_string "log-level" "${log_level}"
+ 	json_add_boolean "iptables" "${iptables}"
++	[ -z "${log_driver}" ] || json_add_string "log-driver" "${log_driver}"
+ 	[ -z "${bip}" ] || json_add_string "bip" "${bip}"
+ 	[ -z "${registry_mirrors}" ] || json_add_array "registry-mirrors"
+ 	[ -z "${registry_mirrors}" ] || config_list_foreach globals registry_mirrors json_add_array_string
+@@ -215,6 +221,7 @@ start_service() {
+ 
+ 	procd_open_instance
+ 	procd_set_param stderr 1
++	[ -z "${http_proxy}" ] || procd_set_param env "HTTP_PROXY=${http_proxy}"
+ 	if [ -z "${DOCKERD_CONF}" ]; then
+ 		procd_set_param command /usr/bin/dockerd
+ 	else
+-- 
+2.25.1
+

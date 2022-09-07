@@ -1,0 +1,15 @@
+#/bin/bash
+
+if [ ! -d openwrt/.git ]; then
+	git clone https://github.com/openwrt/openwrt
+fi
+cd openwrt
+git reset --hard && git pull
+../router-config/openwrt-master/diy-part1.sh
+./scripts/feeds update -a
+./scripts/feeds install -a
+../router-config/openwrt-master/diy-part2.sh
+./scripts/feeds update -a
+./scripts/feeds install -a
+ln -sf ../router-config/openwrt-master/.config
+make defconfig

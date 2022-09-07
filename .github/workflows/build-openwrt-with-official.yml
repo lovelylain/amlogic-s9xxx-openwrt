@@ -13,7 +13,7 @@ on:
       openwrt_soc:
         description: "Select Amlogic SoC"
         required: false
-        default: "all"
+        default: "s905l3a"
         type: choice
         options:
           - all
@@ -36,7 +36,7 @@ on:
       openwrt_kernel:
         description: "Select kernel version"
         required: false
-        default: "5.10.135_5.15.50"
+        default: "5.15.50"
         type: choice
         options:
           - 5.4.210_5.10.135_5.15.50
@@ -55,7 +55,7 @@ on:
       openwrt_size:
         description: "Set the rootfs size(Unit: MiB)."
         required: false
-        default: "960"
+        default: "900"
 
 env:
   REPO_URL: https://github.com/openwrt/openwrt
@@ -137,7 +137,7 @@ jobs:
 
       - name: Build OpenWrt firmware
         if: steps.compile.outputs.status == 'success' && !cancelled()
-        uses: ophub/amlogic-s9xxx-openwrt@main
+        uses: lovelylain/amlogic-s9xxx-openwrt@main
         with:
           openwrt_path: openwrt/bin/targets/*/*/*rootfs.tar.gz
           openwrt_soc: ${{ github.event.inputs.openwrt_soc }}
@@ -161,4 +161,3 @@ jobs:
             Default password: password
             Default WIFI name: OpenWrt
             Default WIFI password: none
-            Install to EMMC: Login to OpenWrt → System → Amlogic Service → Install OpenWrt

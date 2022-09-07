@@ -76,9 +76,9 @@ build_openwrt=(
     "s905l3a"
 )
 # Set OpenWrt firmware size (Unit: MiB, SKIP_MB >= 4, BOOT_MB >= 256, ROOT_MB >= 512)
-SKIP_MB="68"
-BOOT_MB="256"
-ROOT_MB="960"
+SKIP_MB="1"
+BOOT_MB="123"
+ROOT_MB="900"
 #
 # Set font color
 STEPS="[\033[95m STEPS \033[0m]"
@@ -218,8 +218,11 @@ download_depends() {
     if [[ -d "${openvfd_path}" ]]; then
         svn up ${openvfd_path} --force
     else
-        svn co ${depends_repo}/common-files/rootfs/usr/share/openvfd ${openvfd_path} --force
+        :# svn co ${depends_repo}/common-files/rootfs/usr/share/openvfd ${openvfd_path} --force
     fi
+    # Sync balethirq related files
+    svn export ${depends_repo}/common-files/rootfs/usr/sbin/balethirq.pl ${configfiles_path}/rootfs/usr/sbin --force
+    svn export ${depends_repo}/common-files/rootfs/etc/balance_irq ${configfiles_path}/rootfs/etc --force
 
     # Convert script library address to svn format
     if [[ "${script_repo}" == http* && -n "$(echo ${script_repo} | grep "tree/main")" ]]; then
@@ -227,6 +230,7 @@ download_depends() {
     fi
     # Sync install/update and other related files
     svn export ${script_repo} ${configfiles_path}/rootfs/usr/sbin --force
+    chmod +x ${configfiles_path}/rootfs/usr/sbin/*
 
     sync
 }
@@ -379,7 +383,7 @@ confirm_version() {
         ANDROID_UBOOT=""
         ;;
     s905l3a | e900v22c | e900v22d)
-        FDTFILE="meson-g12a-s905l3a-e900v22c.dtb"
+        FDTFILE="meson-g12a-s905l3a-cm311.dtb"
         UBOOT_OVERLOAD="u-boot-e900v22c.bin"
         MAINLINE_UBOOT=""
         ANDROID_UBOOT=""
@@ -477,9 +481,7 @@ refactor_files() {
     mkdir -p etc/modprobe.d
     cat >etc/modprobe.d/99-local.conf <<EOF
 blacklist snd_soc_meson_aiu_i2s
-alias brnf br_netfilter
 alias pwm pwm_meson
-alias wifi brcmfmac
 EOF
 
     # echo br_netfilter > etc/modules.d/br_netfilter
@@ -499,14 +501,14 @@ EOF
     [[ -f "etc/config/turboacc" ]] && sed -i "s|option sfe_flow.*|option sfe_flow '0'|g" etc/config/turboacc
 
     # Add USB and wireless network drivers
-    [[ -f "etc/modules.d/usb-net-rtl8150" ]] || echo "rtl8150" >etc/modules.d/usb-net-rtl8150
+    # [[ -f "etc/modules.d/usb-net-rtl8150" ]] || echo "rtl8150" >etc/modules.d/usb-net-rtl8150
     # USB RTL8152/8153/8156 network card Driver
-    [[ -f "etc/modules.d/usb-net-rtl8152" ]] || echo "r8152" >etc/modules.d/usb-net-rtl8152
+    # [[ -f "etc/modules.d/usb-net-rtl8152" ]] || echo "r8152" >etc/modules.d/usb-net-rtl8152
     # USB AX88179 network card Driver
-    [[ -f "etc/modules.d/usb-net-asix-ax88179" ]] || echo "ax88179_178a" >etc/modules.d/usb-net-asix-ax88179
+    # [[ -f "etc/modules.d/usb-net-asix-ax88179" ]] || echo "ax88179_178a" >etc/modules.d/usb-net-asix-ax88179
     # brcmfmac built-in wireless network card Driver
-    echo "brcmfmac" >etc/modules.d/brcmfmac
-    echo "brcmutil" >etc/modules.d/brcmutil
+    # echo "brcmfmac" >etc/modules.d/brcmfmac
+    # echo "brcmutil" >etc/modules.d/brcmutil
     # USB Realtek RTL8188EU Wireless LAN Driver
     echo "r8188eu" >etc/modules.d/rtl8188eu
     # Realtek RTL8189FS Wireless LAN Driver
@@ -516,22 +518,22 @@ EOF
     # Realtek RTL8822CS Wireless LAN Driver
     echo "88x2cs" >etc/modules.d/88x2cs
     # USB Ralink Wireless LAN Driver
-    echo "rt2500usb" >etc/modules.d/rt2500-usb
-    echo "rt2800usb" >etc/modules.d/rt2800-usb
-    echo "rt2x00usb" >etc/modules.d/rt2x00-usb
+    # echo "rt2500usb" >etc/modules.d/rt2500-usb
+    # echo "rt2800usb" >etc/modules.d/rt2800-usb
+    # echo "rt2x00usb" >etc/modules.d/rt2x00-usb
     # USB Mediatek Wireless LAN Driver
-    echo "mt7601u" >etc/modules.d/mt7601u
-    echo "mt7663u" >etc/modules.d/mt7663u
-    echo "mt76x0u" >etc/modules.d/mt76x0u
-    echo "mt76x2u" >etc/modules.d/mt76x2u
+    # echo "mt7601u" >etc/modules.d/mt7601u
+    # echo "mt7663u" >etc/modules.d/mt7663u
+    # echo "mt76x0u" >etc/modules.d/mt76x0u
+    # echo "mt76x2u" >etc/modules.d/mt76x2u
     # GPU Driver
     echo "panfrost" >etc/modules.d/panfrost
     # PWM Driver
     echo "pwm_meson" >etc/modules.d/pwm_meson
     # Ath10k Driver
-    echo "ath10k_core" >etc/modules.d/ath10k_core
-    echo "ath10k_sdio" >etc/modules.d/ath10k_sdio
-    echo "ath10k_usb" >etc/modules.d/ath10k_usb
+    # echo "ath10k_core" >etc/modules.d/ath10k_core
+    # echo "ath10k_sdio" >etc/modules.d/ath10k_sdio
+    # echo "ath10k_usb" >etc/modules.d/ath10k_usb
 
     # Relink the kmod program
     [[ -x "sbin/kmod" ]] && (
@@ -552,18 +554,15 @@ EOF
     if [[ -d "${cpustat_file}" && -x "bin/bash" ]]; then
         cp -f ${cpustat_file}/cpustat usr/bin/cpustat && chmod +x usr/bin/cpustat >/dev/null 2>&1
         cp -f ${cpustat_file}/getcpu bin/getcpu && chmod +x bin/getcpu >/dev/null 2>&1
-        cp -f ${cpustat_file}/30-sysinfo.sh etc/profile.d/30-sysinfo.sh >/dev/null 2>&1
-        sed -i "s/\/bin\/ash/\/bin\/bash/" etc/passwd >/dev/null 2>&1
-        sed -i "s/\/bin\/ash/\/bin\/bash/" usr/libexec/login.sh >/dev/null 2>&1
+        cp -f ${cpustat_file}/30-sysinfo.sh etc/profile.d/30-sysinfo.bash >/dev/null 2>&1
+        echo "bash /etc/profile.d/30-sysinfo.bash" >etc/profile.d/30-sysinfo.sh
+        # sed -i "s/\/bin\/ash/\/bin\/bash/" etc/passwd >/dev/null 2>&1
+        # sed -i "s/\/bin\/ash/\/bin\/bash/" usr/libexec/login.sh >/dev/null 2>&1
     fi
 
     # Add balethirq
-    balethirq_file="${configfiles_path}/patches/balethirq"
-    if [[ -d "${balethirq_file}" ]]; then
-        cp -f ${balethirq_file}/balethirq.pl usr/sbin/balethirq.pl && chmod +x usr/sbin/balethirq.pl >/dev/null 2>&1
-        sed -i "/exit/i\/usr/sbin/balethirq.pl" etc/rc.local >/dev/null 2>&1
-        cp -f ${balethirq_file}/balance_irq etc/balance_irq >/dev/null 2>&1
-    fi
+    balethirq_file="${configfiles_path}/rootfs/usr/sbin/balethirq.pl"
+    [[ -x "${balethirq_file}" ]] && sed -i "/exit/i#\/usr/sbin/balethirq.pl" etc/rc.local >/dev/null 2>&1
 
     # Add firmware information
     echo "PLATFORM='amlogic'" >>${op_release} 2>/dev/null
@@ -579,8 +578,8 @@ EOF
     if [[ -f "etc/banner" ]]; then
         op_version=$(echo $(ls lib/modules/ 2>/dev/null))
         op_production_date=$(date +%Y-%m-%d)
-        echo " Install OpenWrt: System → Amlogic Service → Install OpenWrt" >>etc/banner
-        echo " Update  OpenWrt: System → Amlogic Service → Online  Update" >>etc/banner
+        # echo " Install OpenWrt: System → Amlogic Service → Install OpenWrt" >>etc/banner
+        # echo " Update  OpenWrt: System → Amlogic Service → Online  Update" >>etc/banner
         echo " Amlogic Box SoC: ${soc} | OpenWrt Kernel: ${op_version}" >>etc/banner
         echo " Production Date: ${op_production_date}" >>etc/banner
         echo "───────────────────────────────────────────────────────────────────────" >>etc/banner
@@ -603,28 +602,30 @@ EOF
         cd lib/firmware/brcm/ && mv -f ../*.hcd . 2>/dev/null
 
         # gtking/gtking pro is bcm4356 wifi/bluetooth, wifi5 module AP6356S
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:00/" "brcmfmac4356-sdio.txt" >"brcmfmac4356-sdio.azw,gtking.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:00/" "brcmfmac4356-sdio.txt" >"brcmfmac4356-sdio.azw,gtking.txt"
         # gtking/gtking pro is bcm4356 wifi/bluetooth, wifi6 module AP6275S
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:01/" "brcmfmac4375-sdio.txt" >"brcmfmac4375-sdio.azw,gtking.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:01/" "brcmfmac4375-sdio.txt" >"brcmfmac4375-sdio.azw,gtking.txt"
         # Phicomm N1 is bcm43455 wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:02/" "brcmfmac43455-sdio.txt" >"brcmfmac43455-sdio.phicomm,n1.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:02/" "brcmfmac43455-sdio.txt" >"brcmfmac43455-sdio.phicomm,n1.txt"
+        ln -sf "brcmfmac43455-sdio.bin" "brcmfmac43455-sdio.phicomm,n1.bin"
+        ln -sf "brcmfmac43455-sdio.txt" "brcmfmac43455-sdio.phicomm,n1.txt"
         # MXQ Pro+ is AP6330(bcm4330) wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:03/" "brcmfmac4330-sdio.txt" >"brcmfmac4330-sdio.crocon,mxq-pro-plus.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:03/" "brcmfmac4330-sdio.txt" >"brcmfmac4330-sdio.crocon,mxq-pro-plus.txt"
         # HK1 Box & H96 Max X3 is bcm54339 wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:04/" "brcmfmac4339-sdio.ZP.txt" >"brcmfmac4339-sdio.amlogic,sm1.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:04/" "brcmfmac4339-sdio.ZP.txt" >"brcmfmac4339-sdio.amlogic,sm1.txt"
         # old ugoos x3 is bcm43455 wifi/bluetooth
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:05/" "brcmfmac43455-sdio.txt" >"brcmfmac43455-sdio.amlogic,sm1.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:05/" "brcmfmac43455-sdio.txt" >"brcmfmac43455-sdio.amlogic,sm1.txt"
         # new ugoos x3 is brm43456
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:06/" "brcmfmac43456-sdio.txt" >"brcmfmac43456-sdio.amlogic,sm1.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:06/" "brcmfmac43456-sdio.txt" >"brcmfmac43456-sdio.amlogic,sm1.txt"
         # x96max plus v5.1 (ip1001m phy) adopts am7256 (brcm4354)
-        sed -e "s/macaddr=.*/macaddr=${random_macaddr}:07/" "brcmfmac4354-sdio.txt" >"brcmfmac4354-sdio.amlogic,sm1.txt"
+        # sed -e "s/macaddr=.*/macaddr=${random_macaddr}:07/" "brcmfmac4354-sdio.txt" >"brcmfmac4354-sdio.amlogic,sm1.txt"
     )
     sync
 
     cd ${boot}
 
     # For btrfs file system
-    uenv_mount_string="UUID=${ROOTFS_UUID} rootflags=compress=zstd:6 rootfstype=btrfs"
+    uenv_mount_string="UUID=${ROOTFS_UUID} rootflags=compress=zstd:15 rootfstype=btrfs"
     boot_conf_file="uEnv.txt"
     [[ -f "${boot_conf_file}" ]] || error_msg "The [ ${boot_conf_file} ] file does not exist."
     sed -i "s|LABEL=ROOTFS|${uenv_mount_string}|g" ${boot_conf_file}
@@ -662,7 +663,7 @@ make_image() {
     dd if=/dev/zero of=${build_image_file} bs=1M count=${IMG_SIZE} conv=fsync 2>/dev/null && sync
 
     parted -s ${build_image_file} mklabel msdos 2>/dev/null
-    parted -s ${build_image_file} mkpart primary fat32 $((SKIP_MB))MiB $((SKIP_MB + BOOT_MB - 1))MiB 2>/dev/null
+    parted -s ${build_image_file} mkpart primary fat32 $((SKIP_MB))MiB $((SKIP_MB + BOOT_MB))MiB 2>/dev/null
     parted -s ${build_image_file} mkpart primary btrfs $((SKIP_MB + BOOT_MB))MiB 100% 2>/dev/null
     sync
 
@@ -697,12 +698,23 @@ copy_files() {
     if ! mount ${loop_new}p1 ${bootfs}; then
         error_msg "mount ${loop_new}p1 failed!"
     fi
-    if ! mount ${loop_new}p2 ${rootfs}; then
+    if ! mount -o compress=zstd:15 ${loop_new}p2 ${rootfs}; then
         error_msg "mount ${loop_new}p2 failed!"
     fi
 
+    btrfs subvolume create ${rootfs}/etc >/dev/null 2>&1
+
+    rm -rf ${boot}/extlinux ${boot}/u-boot-*.bin
+    cp -f "${configfiles_path}/patches/meson-g12a-s905l3a-cm311.dtb" ${boot}/dtb/amlogic
+    cd ${root}/etc && rm -f config/amlogic model_database.txt flippy-openwrt-release docker/daemon.json && cd -
+    rm -rf ${root}/usr/sbin/openwrt-* ${root}/lib/u-boot ${root}/lib/firmware/rtlbt
+    ln -sf ../init.d/btrtl ${root}/etc/rc.d/S61btrtl
     cp -rf ${boot}/* ${bootfs}
     cp -rf ${root}/* ${rootfs}
+
+    # mkdir -p ${rootfs}/.snapshots
+    # btrfs subvolume snapshot -r ${rootfs}/etc ${rootfs}/.snapshots/etc-000 >/dev/null 2>&1
+    # rm -f ${rootfs}/rom/sbin/firstboot 2>/dev/null
     sync
 
     cd ${make_path}
