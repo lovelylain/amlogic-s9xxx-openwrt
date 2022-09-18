@@ -1,7 +1,7 @@
 #/bin/bash
 
 if [ ! -d openwrt/.git ]; then
-	git clone https://github.com/openwrt/openwrt
+	git clone https://github.com/openwrt/openwrt -b openwrt-21.02
 fi
 cd openwrt
 git reset --hard && git pull
