@@ -1,0 +1,15 @@
+#/bin/bash
+
+if [ ! -d lede/.git ]; then
+	git clone https://github.com/coolsnowwolf/lede
+fi
+cd lede
+git reset --hard && git pull
+../router-config/lede-master/diy-part1.sh
+./scripts/feeds update -a
+./scripts/feeds install -a
+../router-config/lede-master/diy-part2.sh
+./scripts/feeds update -a
+./scripts/feeds install -a
+ln -sf ../router-config/lede-master/.config
+make defconfig
