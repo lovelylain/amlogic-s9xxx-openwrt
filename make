@@ -422,7 +422,7 @@ extract_armbian() {
     mkdir -p ${root} ${boot}
 
     # Copy OpenWrt files
-    cp -rf ${root_comm}/* ${root}
+    mv -f ${root_comm}/* ${root}
 
     # Unzip the relevant files
     tar -xJf "${armbian_path}/boot-common.tar.xz" -C ${boot}
@@ -490,8 +490,8 @@ EOF
     echo meson_gxbb_wdt >etc/modules.d/watchdog 2>/dev/null
 
     # Edit fstab
-    sed -i "s/LABEL=ROOTFS/UUID=${ROOTFS_UUID}/" etc/fstab 2>/dev/null
-    sed -i "s/option label 'ROOTFS'/option uuid '${ROOTFS_UUID}'/" etc/config/fstab 2>/dev/null
+    sed -i "s|LABEL=ROOTFS|UUID=${ROOTFS_UUID}|" etc/fstab 2>/dev/null
+    sed -i "s|option label 'ROOTFS'|option uuid '${ROOTFS_UUID}'|" etc/config/fstab 2>/dev/null
 
     # Turn off speed limit by default
     [[ -f "etc/config/nft-qos" ]] && sed -i "s|option limit_enable.*|option limit_enable '0'|g" etc/config/nft-qos
@@ -710,7 +710,7 @@ copy_files() {
     rm -rf ${root}/usr/sbin/openwrt-* ${root}/lib/u-boot ${root}/lib/firmware/rtlbt
     ln -sf ../init.d/btrtl ${root}/etc/rc.d/S61btrtl
     cp -rf ${boot}/* ${bootfs}
-    cp -rf ${root}/* ${rootfs}
+    mv -f ${root}/* ${rootfs}
 
     # mkdir -p ${rootfs}/.snapshots
     # btrfs subvolume snapshot -r ${rootfs}/etc ${rootfs}/.snapshots/etc-000 >/dev/null 2>&1
@@ -752,8 +752,8 @@ loop_make() {
                 echo -n "(${j}.${i}) Start making OpenWrt [ ${b} - ${k} ]. "
 
                 now_remaining_space="$(df -Tk ${make_path} | grep '/dev/' | awk '{print $5}' | echo $(($(xargs) / 1024 / 1024)))"
-                if [[ "${now_remaining_space}" -le "2" ]]; then
-                    echo "Remaining space is less than 2G, exit this making. \n"
+                if [[ "${now_remaining_space}" -le "3" ]]; then
+                    echo "Remaining space is less than 3G, exit this making. \n"
                     break
                 else
                     echo "Remaining space is ${now_remaining_space}G."
