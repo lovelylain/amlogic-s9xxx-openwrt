@@ -5,6 +5,6 @@ USE_PROCD=1
 
 start_service() {
 	procd_open_instance
-	procd_set_param command /bin/sh -c '(sleep 4 && bluetoothctl power on &) && gpioset -m time -s 1 0 82=0 && gpioset 0 82=1 && rtk_hciattach -n -s 115200 ttyAML1 rtk_h5'
+	procd_set_param command /bin/sh -c '(sleep 5 && bluetoothctl power on &) && gpioset -m time -s 1 0 82=0 && gpioset 0 82=1 && rtk_hciattach -n -s 115200 ttyAML1 rtk_h5'
 	procd_close_instance
 }

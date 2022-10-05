@@ -1,0 +1,25 @@
+From 80517d5923ee3b649ddf6d5dc8847f4ca62e60ed Mon Sep 17 00:00:00 2001
+From: lovelylain <jobmailcn@gmail.com>
+Date: Wed, 5 Oct 2022 09:10:08 +0800
+Subject: [PATCH] patch turboacc
+
+---
+ applications/luci-app-turboacc/root/etc/init.d/turboacc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/applications/luci-app-turboacc/root/etc/init.d/turboacc b/applications/luci-app-turboacc/root/etc/init.d/turboacc
+index e4a5cf9..2ec688c 100755
+--- a/applications/luci-app-turboacc/root/etc/init.d/turboacc
++++ b/applications/luci-app-turboacc/root/etc/init.d/turboacc
+@@ -215,6 +215,8 @@ change_dns() {
+ }
+ 
+ revert_dns() {
++	local dnsmasq_server=$(uci get dhcp.@dnsmasq[0].server 2>/dev/null)
++	[[ "$dnsmasq_server" =~ "127.0.0.1#5333" ]] || return
+   uci set dhcp.@dnsmasq[0].noresolv="0"
+ 	uci -q del_list dhcp.@dnsmasq[0].server="127.0.0.1#5333"
+ 	if [ -d "/tmp/resolv.conf.d" ]; then
+-- 
+2.25.1
+

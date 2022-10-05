@@ -53,7 +53,8 @@ echo "DISTRIB_SOURCECODE='lede'" >>package/base-files/files/etc/openwrt_release
 
 # Apply patch
 # git apply ../router-config/patches/{0001*,0002*}.patch --directory=feeds/luci
-git apply "$topdir"/amlogic-s9xxx/common-files/patches/0001-patch-dockerd.init.patch --directory=feeds/packages
+git apply "$topdir"/amlogic-s9xxx/common-files/patches/packages-*.patch --directory=feeds/packages
+git apply "$topdir"/router-config/lede-master/patches/luci-*.patch --directory=feeds/luci
 #
 # ------------------------------- Other ends -------------------------------
 
