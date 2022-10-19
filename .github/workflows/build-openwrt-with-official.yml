@@ -23,6 +23,7 @@ on:
           - s922x-n2
           - s922x-reva
           - s905x3
+          - s905x3-b
           - s905x2
           - s905x2-km3
           - s912
@@ -42,11 +43,12 @@ on:
           - 5.4.210_5.10.135_5.15.50
           - 5.4.210_5.10.135
           - 5.10.135_5.15.50
-          - 5.15.50_5.19.1
+          - 5.15.50_6.0.1
           - 5.4.210
           - 5.10.135
           - 5.15.50
           - 5.19.1
+          - 6.0.1
       auto_kernel:
         description: "Auto use the latest kernel"
         required: false
@@ -69,7 +71,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    if: github.event.repository.owner.id == github.event.sender.id
+    if: ${{ github.event.repository.owner.id }} == ${{ github.event.sender.id }}
 
     steps:
       - name: Checkout
@@ -88,10 +90,11 @@ jobs:
           sudo timedatectl set-timezone "${TZ}"
           sudo mkdir -p /workdir
           sudo chown ${USER}:${GROUPS} /workdir
-          echo "::set-output name=status::success"
+          echo "status=success" >> ${GITHUB_OUTPUT}
 
       - name: Clone source code
         working-directory: /workdir
+        if: ${{ steps.init.outputs.status }} == 'success' && !cancelled()
         run: |
           df -hT ${PWD}
           git clone --depth 1 ${REPO_URL} -b ${REPO_BRANCH} openwrt
@@ -133,10 +136,20 @@ jobs:
           cd openwrt
           echo -e "$(nproc) thread compile"
           make -j$(($(nproc) + 1)) V=s || make -j1 || make -j1 V=s
-          echo "::set-output name=status::success"
+          echo "build_tag=OpenWrt_Aml_official_$(date +"%m.%d.%H%M")" >> ${GITHUB_OUTPUT}
+          echo "status=success" >> ${GITHUB_OUTPUT}
+
+      - name: Upload OpenWrt Firmware to Release
+        uses: ncipollo/release-action@main
+        if: ${{ steps.compile.outputs.status }} == 'success' && !cancelled()
+        with:
+          tag: ${{ steps.compile.outputs.build_tag }}
+          artifacts: openwrt/bin/targets/*/*/*rootfs.tar.gz
+          allowUpdates: true
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Build OpenWrt firmware
-        if: steps.compile.outputs.status == 'success' && !cancelled()
+        if: ${{ steps.compile.outputs.status }} == 'success' && !cancelled()
         uses: lovelylain/amlogic-s9xxx-openwrt@main
         with:
           openwrt_path: openwrt/bin/targets/*/*/*rootfs.tar.gz
@@ -145,11 +158,11 @@ jobs:
           auto_kernel: ${{ github.event.inputs.auto_kernel }}
           openwrt_size: ${{ github.event.inputs.openwrt_size }}
 
-      - name: Upload OpenWrt Firmware to Release
+      - name: Upload the packaged firmware to Release
         uses: ncipollo/release-action@main
-        if: env.PACKAGED_STATUS == 'success' && !cancelled()
+        if: ${{ env.PACKAGED_STATUS }} == 'success' && !cancelled()
         with:
-          tag: OpenWrt_Aml_official_${{ env.PACKAGED_OUTPUTDATE }}
+          tag: ${{ steps.compile.outputs.build_tag }}
           artifacts: ${{ env.PACKAGED_OUTPUTPATH }}/*
           allowUpdates: true
           token: ${{ secrets.GH_TOKEN }}
