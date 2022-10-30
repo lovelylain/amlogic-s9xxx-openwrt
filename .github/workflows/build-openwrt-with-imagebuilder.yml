@@ -14,11 +14,11 @@ on:
       branch:
         description: "Select the releases branch"
         required: false
-        default: "22.03.0"
+        default: "22.03.2"
         type: choice
         options:
-          - 22.03.0
-          - 21.02.3
+          - 22.03.2
+          - 21.02.5
           - 19.07.10
           - 18.06.9
       openwrt_soc:
@@ -58,7 +58,6 @@ on:
           - 5.4.210
           - 5.10.135
           - 5.15.50
-          - 5.19.1
           - 6.0.1
       auto_kernel:
         description: "Auto use the latest kernel"
