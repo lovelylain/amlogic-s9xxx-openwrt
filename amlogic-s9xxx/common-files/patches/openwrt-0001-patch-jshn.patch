@@ -1,0 +1,32 @@
+From cc113e62aae9d9a304bfe18d9e1426a0fc13b6dd Mon Sep 17 00:00:00 2001
+From: lovelylain <jobmailcn@gmail.com>
+Date: Sun, 20 Nov 2022 12:29:40 +0800
+Subject: [PATCH] patch jshn
+
+---
+ package/libs/libubox/patches/000-jshn.patch | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+ create mode 100644 package/libs/libubox/patches/000-jshn.patch
+
+diff --git a/package/libs/libubox/patches/000-jshn.patch b/package/libs/libubox/patches/000-jshn.patch
+new file mode 100644
+index 000000000..c2e2bca71
+--- /dev/null
++++ b/package/libs/libubox/patches/000-jshn.patch
+@@ -0,0 +1,13 @@
++Index: libubox-2021-11-04-c86a894e/jshn.c
++===================================================================
++--- libubox-2021-11-04-c86a894e.orig/jshn.c
+++++ libubox-2021-11-04-c86a894e/jshn.c
++@@ -99,7 +99,7 @@ static void add_json_string(const char *
++ static void write_key_string(const char *key)
++ {
++ 	while (*key) {
++-		putc(isalnum(*key) ? *key : '_', stdout);
+++		putc((*key!='\'') ? *key : '_', stdout);
++ 		key++;
++ 	}
++ }
+-- 
+2.25.1
+

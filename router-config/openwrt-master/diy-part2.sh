@@ -44,6 +44,7 @@ echo "DISTRIB_SOURCECODE='official'" >>package/base-files/files/etc/openwrt_rele
 
 # Apply patch
 # git apply ../router-config/patches/{0001*,0002*}.patch --directory=feeds/luci
+git apply "$topdir"/amlogic-s9xxx/common-files/patches/openwrt-*.patch
 git apply "$topdir"/amlogic-s9xxx/common-files/patches/packages-*.patch --directory=feeds/packages
 #
 # ------------------------------- Other ends -------------------------------
